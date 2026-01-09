@@ -1,0 +1,40 @@
+# Retro Amber - 8bit CRT Amber Monitor Theme
+# Inspired by vintage amber phosphor CRT displays
+
+background = #1a1206
+foreground = #ffb347
+cursor-color = #ff8c00
+selection-background = #ff8c00
+selection-foreground = #1a1206
+
+# Black / Dark
+palette = 0=#1a1206
+palette = 8=#3d2a10
+
+# Red -> Warm Orange
+palette = 1=#e05a00
+palette = 9=#ff7b2e
+
+# Green -> Yellow-Orange
+palette = 2=#cc8800
+palette = 10=#e6a020
+
+# Yellow -> Bright Amber
+palette = 3=#ffaa00
+palette = 11=#ffc44d
+
+# Blue -> Burnt Orange
+palette = 4=#b34700
+palette = 12=#d96830
+
+# Magenta -> Coral
+palette = 5=#d97030
+palette = 13=#f08050
+
+# Cyan -> Peach
+palette = 6=#e89050
+palette = 14=#ffaa70
+
+# White / Light
+palette = 7=#ffb347
+palette = 15=#ffe4b5

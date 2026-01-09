@@ -1,0 +1,52 @@
+# NES RPG - Complete Configuration Example
+# このファイルを ~/.config/ghostty/config にコピーまたは参考にしてください
+#
+# === HOW TO USE ===
+# 1. テーマファイル (nes-rpg) を ~/.config/ghostty/themes/ に配置
+# 2. このファイルの設定を ~/.config/ghostty/config に追加
+# 3. ピクセルフォントをインストール（下記参照）
+
+# テーマの適用
+theme = nes-rpg
+
+# === PIXEL FONTS (8bit風フォント) ===
+# 以下のフォントがおすすめです。インストール後に使用可能になります。
+#
+# ** Press Start 2P ** (Google Fonts)
+#    - 最も8bit/NES風のルック
+#    - brew install --cask font-press-start-2p
+#
+# ** PixelMplus ** (日本語対応)
+#    - 日本語を使う場合に最適
+#    - https://itouhiro.hatenablog.com/entry/20130602/font
+#
+# ** JF Dot Gothic ** (美咲フォント系, 日本語対応)
+#    - 8x8 ドットの日本語フォント
+#
+# ** Cozette ** (Nerd Font互換)
+#    - アイコン付きのピクセルフォント
+#    - brew install --cask font-cozette
+
+# フォント設定例 (好みに合わせて選択)
+font-family = "Press Start 2P"
+# font-family = "PixelMplus10"
+# font-family = "Cozette"
+
+# フォントサイズ (ピクセルフォントは大きめ推奨)
+font-size = 14
+
+# === 8bit風の追加設定 ===
+
+# CRTスキャンライン風効果 (背景に若干の透明度)
+# background-opacity = 0.95
+
+# ウィンドウ余白 (レトロゲーム風に広めに)
+window-padding-x = 16
+window-padding-y = 16
+
+# カーソル設定 (ブロックカーソルがレトロ風)
+cursor-style = block
+cursor-style-blink = true
+
+# ベル音をオフにして静かなレトロ感
+audible-bell = false

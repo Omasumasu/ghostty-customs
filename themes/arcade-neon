@@ -1,0 +1,41 @@
+# Arcade Neon - 80s Arcade Game Theme
+# Inspired by classic arcade cabinets and neon-lit game centers
+# パックマン、ギャラガ、ドンキーコングなどをイメージ
+
+background = #0a0a14
+foreground = #fff8e0
+cursor-color = #ff0055
+selection-background = #ff0055
+selection-foreground = #0a0a14
+
+# Black / Dark
+palette = 0=#0a0a14
+palette = 8=#2a2a3a
+
+# Red - GAME OVER, ゴースト
+palette = 1=#ff0055
+palette = 9=#ff5588
+
+# Green - 1UP, スコア
+palette = 2=#00ff66
+palette = 10=#66ffaa
+
+# Yellow - パックマン, パワーアップ
+palette = 3=#ffff00
+palette = 11=#ffff88
+
+# Blue - ボーナスステージ
+palette = 4=#00aaff
+palette = 12=#66ccff
+
+# Magenta - 特殊効果
+palette = 5=#ff00ff
+palette = 13=#ff88ff
+
+# Cyan - 氷ステージ, UI
+palette = 6=#00ffff
+palette = 14=#88ffff
+
+# White / Light - HIGH SCORE
+palette = 7=#cccccc
+palette = 15=#fff8e0

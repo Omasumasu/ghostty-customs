@@ -1,0 +1,41 @@
+# NES RPG - 8bit Famicom/NES Style Theme
+# Inspired by classic 8bit RPG games like Dragon Quest and Final Fantasy
+# カラーパレットはNESの限定色を参考に作成
+
+background = #0f0f23
+foreground = #fcfcfc
+cursor-color = #f83800
+selection-background = #0078f8
+selection-foreground = #fcfcfc
+
+# Black / Dark - 夜空・ダンジョン
+palette = 0=#0f0f23
+palette = 8=#3c3c5c
+
+# Red - ダメージ・HP
+palette = 1=#f83800
+palette = 9=#fc6868
+
+# Green - 回復・MP・森
+palette = 2=#00a844
+palette = 10=#58d854
+
+# Yellow - ゴールド・経験値
+palette = 3=#fcbc3c
+palette = 11=#fcfc68
+
+# Blue - 水・魔法・メニュー
+palette = 4=#0078f8
+palette = 12=#68b8fc
+
+# Magenta - レアアイテム・魔法
+palette = 5=#d800cc
+palette = 13=#fc74fc
+
+# Cyan - 氷・特殊効果
+palette = 6=#00bcbc
+palette = 14=#6cfffc
+
+# White / Light - テキスト・UI
+palette = 7=#bcbcbc
+palette = 15=#fcfcfc

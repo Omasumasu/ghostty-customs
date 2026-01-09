@@ -1,0 +1,40 @@
+# Retro Phosphor - 8bit CRT Green Monitor Theme
+# Inspired by vintage green phosphor CRT displays
+
+background = #0a1208
+foreground = #33ff66
+cursor-color = #00ff41
+selection-background = #00ff41
+selection-foreground = #0a1208
+
+# Black / Dark
+palette = 0=#0a1208
+palette = 8=#1a3018
+
+# Red -> Dark Green
+palette = 1=#1e7030
+palette = 9=#2a9040
+
+# Green -> Bright Phosphor
+palette = 2=#00dd44
+palette = 10=#33ff66
+
+# Yellow -> Light Green
+palette = 3=#55ff77
+palette = 11=#88ffaa
+
+# Blue -> Teal Green
+palette = 4=#20a050
+palette = 12=#30c060
+
+# Magenta -> Mint
+palette = 5=#40c080
+palette = 13=#60e0a0
+
+# Cyan -> Seafoam
+palette = 6=#50d090
+palette = 14=#70f0b0
+
+# White / Light
+palette = 7=#33ff66
+palette = 15=#ccffdd

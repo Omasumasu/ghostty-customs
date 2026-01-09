@@ -1,0 +1,43 @@
+# Avatar Terminal - Avatar UI Inspired Theme
+# Inspired by avatar-ui-core's classic terminal aesthetic
+# https://github.com/sito-sikino/avatar-ui-core
+#
+# 8bit RPG風のAIアバターが話しかけてくるような世界観
+
+background = #0c1014
+foreground = #39ff14
+cursor-color = #39ff14
+selection-background = #39ff14
+selection-foreground = #0c1014
+
+# Black / Dark - ターミナル背景
+palette = 0=#0c1014
+palette = 8=#1c2c24
+
+# Red - エラー・警告
+palette = 1=#ff3c38
+palette = 9=#ff6b68
+
+# Green - メイン・AI音声
+palette = 2=#39ff14
+palette = 10=#6fff52
+
+# Yellow - 強調・プロンプト
+palette = 3=#c8ff00
+palette = 11=#e0ff66
+
+# Blue - システムメッセージ
+palette = 4=#00d4ff
+palette = 12=#66e4ff
+
+# Magenta - 特殊コマンド
+palette = 5=#ff00ff
+palette = 13=#ff77ff
+
+# Cyan - 情報・ヘルプ
+palette = 6=#00ffc8
+palette = 14=#77ffdd
+
+# White / Light
+palette = 7=#a8ffb0
+palette = 15=#e0ffe4
