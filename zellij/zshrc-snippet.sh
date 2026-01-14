@@ -1,10 +1,17 @@
 # ===== zellij + git worktree 連携 =====
 # zellijペイン名をgit worktree名に自動設定
+
+# zellijコマンドのパスを検出
+_zellij_cmd() {
+    command -v zellij 2>/dev/null || echo "/opt/homebrew/bin/zellij"
+}
+
 if [[ -n "$ZELLIJ" ]]; then
     function _update_zellij_pane_name() {
-        if git rev-parse --git-dir > /dev/null 2>&1; then
+        local zellij_bin=$(_zellij_cmd)
+        if [[ -x "$zellij_bin" ]] && git rev-parse --git-dir > /dev/null 2>&1; then
             local worktree_name=$(basename "$(git rev-parse --show-toplevel)")
-            zellij action rename-pane "$worktree_name"
+            "$zellij_bin" action rename-pane "$worktree_name"
         fi
     }
 
