@@ -29,6 +29,9 @@ BASHRC="$HOME/.bashrc"
 MARKER_START="# ===== zellij + git worktree 連携 ====="
 MARKER_END="# ===== zellij + git worktree 連携 END ====="
 
+# zellij executable path (detected dynamically)
+ZELLIJ_BIN=""
+
 print_header() {
     echo -e "${CYAN}"
     echo "╔══════════════════════════════════════════╗"
@@ -54,11 +57,12 @@ print_success() {
     echo -e "${GREEN}✔${NC} $1"
 }
 
-# Check if zellij is installed
+# Check if zellij is installed and set ZELLIJ_BIN
 check_zellij() {
-    if command -v zellij &> /dev/null; then
-        local version=$(zellij --version 2>/dev/null || echo "unknown")
-        print_success "zellij found: $version"
+    ZELLIJ_BIN=$(command -v zellij 2>/dev/null || true)
+    if [[ -n "$ZELLIJ_BIN" ]]; then
+        local version=$("$ZELLIJ_BIN" --version 2>/dev/null || echo "unknown")
+        print_success "zellij found: $version ($ZELLIJ_BIN)"
         return 0
     else
         print_warn "zellij not found"
@@ -89,6 +93,8 @@ install_zellij() {
     print_step "Installing zellij via Homebrew..."
     if brew install zellij; then
         print_success "zellij installed successfully"
+        # Re-check to get the installed path
+        check_zellij
     else
         print_error "Failed to install zellij"
         return 1
@@ -226,7 +232,7 @@ setup_ghostty_config() {
         fi
     else
         print_step "Creating Ghostty config..."
-        cat > "$GHOSTTY_CONFIG" << 'EOF'
+        cat > "$GHOSTTY_CONFIG" << EOF
 # Ghostty config
 
 # Font
@@ -241,7 +247,7 @@ keybind = ctrl+shift+t=new_tab
 keybind = ctrl+shift+n=new_window
 
 # Uncomment to auto-start zellij with 4-pane layout
-# command = zellij --layout parallel-claude
+# command = $ZELLIJ_BIN --layout parallel-claude
 EOF
         print_success "Ghostty config created: $GHOSTTY_CONFIG"
     fi
