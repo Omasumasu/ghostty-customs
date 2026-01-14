@@ -29,6 +29,10 @@ BASHRC="$HOME/.bashrc"
 MARKER_START="# ===== zellij + git worktree 連携 ====="
 MARKER_END="# ===== zellij + git worktree 連携 END ====="
 
+# Marker for zellij config.kdl
+ZELLIJ_MARKER_START="// ===== ghostty-customs zellij config ====="
+ZELLIJ_MARKER_END="// ===== ghostty-customs zellij config END ====="
+
 # zellij executable path (detected dynamically)
 ZELLIJ_BIN=""
 
@@ -130,6 +134,81 @@ setup_zellij_layout() {
         print_error "Layout file not found: $layout_src"
         return 1
     fi
+}
+
+# Check if zellij config integration already exists
+check_zellij_config_integration() {
+    local config_file="$ZELLIJ_CONFIG_DIR/config.kdl"
+    if [[ -f "$config_file" ]] && grep -q "$ZELLIJ_MARKER_START" "$config_file"; then
+        return 0  # Already installed
+    fi
+    return 1  # Not installed
+}
+
+# Setup zellij config (default_shell as login shell)
+setup_zellij_config() {
+    echo ""
+    echo -e "${MAGENTA}=== ZELLIJ CONFIG (LOGIN SHELL) ===${NC}"
+    echo ""
+
+    local config_file="$ZELLIJ_CONFIG_DIR/config.kdl"
+    local snippet_file="$ZELLIJ_SRC/config-snippet.kdl"
+
+    if [[ ! -f "$snippet_file" ]]; then
+        print_warn "Config snippet not found: $snippet_file"
+        print_step "Creating default config snippet..."
+        # Create default snippet inline
+        mkdir -p "$ZELLIJ_SRC"
+        cat > "$snippet_file" << 'EOF'
+// デフォルトシェル
+// Zellijはインタラクティブシェルとして起動するため.zshrcは自動的に読み込まれます
+default_shell "zsh"
+EOF
+    fi
+
+    # Check if config.kdl exists
+    if [[ ! -f "$config_file" ]]; then
+        print_step "Creating zellij config.kdl..."
+        {
+            echo "$ZELLIJ_MARKER_START"
+            cat "$snippet_file"
+            echo "$ZELLIJ_MARKER_END"
+        } > "$config_file"
+        print_success "Zellij config created: $config_file"
+        return 0
+    fi
+
+    # Check if already installed
+    if check_zellij_config_integration; then
+        print_warn "Zellij login shell config already installed"
+        read -p "Reinstall? (y/N): " reinstall
+        if [[ ! "$reinstall" =~ ^[Yy]$ ]]; then
+            return 0
+        fi
+        # Remove existing integration
+        print_step "Removing existing config integration..."
+        local temp_file=$(mktemp)
+        sed "/$ZELLIJ_MARKER_START/,/$ZELLIJ_MARKER_END/d" "$config_file" > "$temp_file"
+        mv "$temp_file" "$config_file"
+    fi
+
+    # Check if default_shell is already set (not commented out)
+    if grep -q "^default_shell" "$config_file"; then
+        print_warn "default_shell already configured in config.kdl"
+        print_step "Skipping to avoid duplicate configuration"
+        return 0
+    fi
+
+    # Add integration at the end of file
+    print_step "Adding login shell configuration..."
+    {
+        echo ""
+        echo "$ZELLIJ_MARKER_START"
+        cat "$snippet_file"
+        echo "$ZELLIJ_MARKER_END"
+    } >> "$config_file"
+
+    print_success "Login shell configuration added to $config_file"
 }
 
 # Check if shell integration already exists
@@ -302,6 +381,16 @@ uninstall() {
         print_success "Layout removed"
     fi
 
+    # Remove zellij config integration
+    local config_file="$ZELLIJ_CONFIG_DIR/config.kdl"
+    if [[ -f "$config_file" ]] && grep -q "$ZELLIJ_MARKER_START" "$config_file"; then
+        print_step "Removing zellij config integration..."
+        local temp_file=$(mktemp)
+        sed "/$ZELLIJ_MARKER_START/,/$ZELLIJ_MARKER_END/d" "$config_file" > "$temp_file"
+        mv "$temp_file" "$config_file"
+        print_success "Zellij config integration removed"
+    fi
+
     # Remove shell integration
     for rc_file in "$ZSHRC" "$BASHRC"; do
         if [[ -f "$rc_file" ]] && grep -q "$MARKER_START" "$rc_file"; then
@@ -341,6 +430,7 @@ main() {
 
     # Setup steps
     setup_zellij_layout
+    setup_zellij_config
     setup_shell_integration
     setup_ghostty_config
 
