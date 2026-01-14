@@ -1,0 +1,17 @@
+// 4ペイン並列レイアウト（2x2グリッド）for Claude Code + git worktree
+// 使い方: zellij --layout parallel-claude
+layout {
+    pane split_direction="horizontal" {
+        pane split_direction="vertical" {
+            pane name="worktree-1"
+            pane name="worktree-2"
+        }
+        pane split_direction="vertical" {
+            pane name="worktree-3"
+            pane name="worktree-4"
+        }
+    }
+    pane size=1 borderless=true {
+        plugin location="compact-bar"
+    }
+}

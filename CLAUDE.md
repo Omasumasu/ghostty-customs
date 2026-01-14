@@ -43,9 +43,28 @@ cargo clippy
 ghostty-customs/
 ├── themes/    # Ghosttyテーマファイル
 ├── plugins/   # Ghosttyプラグイン (Rust)
-└── tools/     # ユーティリティツール (Rust)
+├── tools/     # ユーティリティツール (Rust/Shell)
+└── zellij/    # zellij連携設定
+    └── layouts/   # zellijレイアウトファイル
 ```
 
 - `themes/`: Ghosttyの設定ファイル形式のテーマ
 - `plugins/`: Ghostty用プラグイン（各プラグインは独立したCargoパッケージ）
-- `tools/`: 補助ツール（各ツールは独立したCargoパッケージ）
+- `tools/`: 補助ツール（Rust/Shell）
+- `zellij/`: zellij + git worktree連携設定
+
+## Tools
+
+### install-theme.sh
+8bit/Retroテーマのインストーラー
+
+### install-zellij-integration.sh
+zellij + git worktree並列開発環境のセットアップ
+
+```bash
+# インストール
+./tools/install-zellij-integration.sh
+
+# アンインストール
+./tools/install-zellij-integration.sh --uninstall
+```
