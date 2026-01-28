@@ -1,3 +1,30 @@
 // デフォルトシェル
 // Zellijはインタラクティブシェルとして起動するため.zshrcは自動的に読み込まれます
 default_shell "zsh"
+
+// テーマ（お好みで変更）
+// theme "catppuccin-mocha"
+
+// キーバインド: フローティングツール呼び出し
+keybinds {
+    shared {
+        // Alt+y: yazi（ファイラー）をフローティングで起動
+        bind "Alt y" {
+            Run "yazi" {
+                floating true
+            }
+        }
+        // Alt+g: lazygit をフローティングで起動
+        bind "Alt g" {
+            Run "lazygit" {
+                floating true
+            }
+        }
+        // Alt+t: 汎用フローティングターミナル
+        bind "Alt t" {
+            NewPane {
+                floating true
+            }
+        }
+    }
+}

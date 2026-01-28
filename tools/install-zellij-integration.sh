@@ -1,7 +1,8 @@
 #!/bin/bash
 #
-# Ghostty + zellij + git worktree Integration Installer
-# 4ペイン並列開発環境セットアップ
+# Ghostty + zellij + Terminal IDE Integration Installer
+# ターミナルで完結する開発環境セットアップ
+# 含まれるツール: zellij, yazi, lazygit, fzf, ripgrep, fd, bat
 #
 
 set -e
@@ -39,8 +40,8 @@ ZELLIJ_BIN=""
 print_header() {
     echo -e "${CYAN}"
     echo "╔══════════════════════════════════════════╗"
-    echo "║   ZELLIJ + GIT WORKTREE INTEGRATION      ║"
-    echo "║   並列開発環境セットアップ               ║"
+    echo "║   TERMINAL IDE INTEGRATION               ║"
+    echo "║   ターミナル完結開発環境セットアップ     ║"
     echo "╚══════════════════════════════════════════╝"
     echo -e "${NC}"
 }
@@ -105,6 +106,87 @@ install_zellij() {
     fi
 }
 
+# Check and install terminal IDE tools
+check_tool() {
+    local tool="$1"
+    if command -v "$tool" &> /dev/null; then
+        local version=$("$tool" --version 2>/dev/null | head -1 || echo "installed")
+        print_success "$tool: $version"
+        return 0
+    else
+        print_warn "$tool not found"
+        return 1
+    fi
+}
+
+install_terminal_tools() {
+    echo ""
+    echo -e "${MAGENTA}=== TERMINAL IDE TOOLS INSTALLATION ===${NC}"
+    echo ""
+
+    if ! command -v brew &> /dev/null; then
+        print_error "Homebrew not found. Please install tools manually."
+        return 1
+    fi
+
+    local tools_to_install=()
+
+    # Check each tool
+    echo -e "${YELLOW}Checking installed tools...${NC}"
+    echo ""
+
+    if ! check_tool yazi; then
+        tools_to_install+=("yazi")
+    fi
+
+    if ! check_tool lazygit; then
+        tools_to_install+=("lazygit")
+    fi
+
+    if ! check_tool fzf; then
+        tools_to_install+=("fzf")
+    fi
+
+    if ! check_tool rg; then
+        tools_to_install+=("ripgrep")
+    fi
+
+    if ! check_tool fd; then
+        tools_to_install+=("fd")
+    fi
+
+    if ! check_tool bat; then
+        tools_to_install+=("bat")
+    fi
+
+    echo ""
+
+    if [[ ${#tools_to_install[@]} -eq 0 ]]; then
+        print_success "All terminal IDE tools are already installed!"
+        return 0
+    fi
+
+    echo -e "${YELLOW}The following tools will be installed:${NC}"
+    for tool in "${tools_to_install[@]}"; do
+        echo "  - $tool"
+    done
+    echo ""
+
+    read -p "Install these tools? (Y/n): " install_choice
+    if [[ "$install_choice" =~ ^[Nn]$ ]]; then
+        print_warn "Skipping tool installation"
+        return 0
+    fi
+
+    print_step "Installing tools via Homebrew..."
+    if brew install "${tools_to_install[@]}"; then
+        print_success "Tools installed successfully"
+    else
+        print_error "Some tools failed to install"
+        return 1
+    fi
+}
+
 # Create zellij directories and copy layout
 setup_zellij_layout() {
     echo ""
@@ -122,18 +204,21 @@ setup_zellij_layout() {
         mkdir -p "$ZELLIJ_LAYOUTS_DIR"
     fi
 
-    # Copy layout file
-    local layout_src="$ZELLIJ_SRC/layouts/parallel-claude.kdl"
-    local layout_dst="$ZELLIJ_LAYOUTS_DIR/parallel-claude.kdl"
+    # Copy layout files
+    local layouts=("parallel-claude.kdl" "terminal-ide.kdl")
 
-    if [[ -f "$layout_src" ]]; then
-        print_step "Installing parallel-claude layout..."
-        cp "$layout_src" "$layout_dst"
-        print_success "Layout installed: $layout_dst"
-    else
-        print_error "Layout file not found: $layout_src"
-        return 1
-    fi
+    for layout_name in "${layouts[@]}"; do
+        local layout_src="$ZELLIJ_SRC/layouts/$layout_name"
+        local layout_dst="$ZELLIJ_LAYOUTS_DIR/$layout_name"
+
+        if [[ -f "$layout_src" ]]; then
+            print_step "Installing $layout_name layout..."
+            cp "$layout_src" "$layout_dst"
+            print_success "Layout installed: $layout_dst"
+        else
+            print_warn "Layout file not found: $layout_src (skipping)"
+        fi
+    done
 }
 
 # Check if zellij config integration already exists
@@ -309,6 +394,41 @@ setup_ghostty_config() {
                 print_success "Keybinds added"
             fi
         fi
+
+        # Check if zellij auto-start is configured
+        if grep -q "^command = .*zellij" "$GHOSTTY_CONFIG"; then
+            print_warn "zellij自動起動は既に設定済み"
+        else
+            echo ""
+            echo -e "${YELLOW}Ghostty起動時にzellijを自動起動しますか？${NC}"
+            echo "  1) terminal-ide（推奨: Claude 3ペイン + チートシート）"
+            echo "  2) parallel-claude（4ペイン）"
+            echo "  3) 設定しない"
+            read -p "選択 [1-3]: " layout_choice
+            case "$layout_choice" in
+                1)
+                    print_step "Terminal IDEレイアウトで自動起動を設定..."
+                    {
+                        echo ""
+                        echo "# Terminal IDEレイアウトでzellij起動"
+                        echo "command = $ZELLIJ_BIN --layout terminal-ide"
+                    } >> "$GHOSTTY_CONFIG"
+                    print_success "自動起動設定完了（terminal-ide）"
+                    ;;
+                2)
+                    print_step "4ペインレイアウトで自動起動を設定..."
+                    {
+                        echo ""
+                        echo "# 4ペインレイアウトでzellij起動"
+                        echo "command = $ZELLIJ_BIN --layout parallel-claude"
+                    } >> "$GHOSTTY_CONFIG"
+                    print_success "自動起動設定完了（parallel-claude）"
+                    ;;
+                *)
+                    print_warn "自動起動はスキップ"
+                    ;;
+            esac
+        fi
     else
         print_step "Creating Ghostty config..."
         cat > "$GHOSTTY_CONFIG" << EOF
@@ -325,8 +445,8 @@ window-padding-y = 4
 keybind = ctrl+shift+t=new_tab
 keybind = ctrl+shift+n=new_window
 
-# Uncomment to auto-start zellij with 4-pane layout
-# command = $ZELLIJ_BIN --layout parallel-claude
+# Terminal IDEレイアウトでzellij起動
+command = $ZELLIJ_BIN --layout terminal-ide
 EOF
         print_success "Ghostty config created: $GHOSTTY_CONFIG"
     fi
@@ -344,12 +464,28 @@ show_usage() {
     echo -e "  ${GREEN}1.${NC} 新しいターミナルを開くか、設定を再読み込み:"
     echo -e "     ${CYAN}source ~/.zshrc${NC}"
     echo ""
-    echo -e "  ${GREEN}2.${NC} 4ペイン構成でzellij起動:"
-    echo -e "     ${CYAN}zp4${NC}"
+    echo -e "  ${GREEN}2.${NC} Ghosttyを起動すると自動的にTerminal IDEが起動します"
+    echo -e "     （右側にチートシート付き）"
     echo ""
-    echo -e "  ${GREEN}3.${NC} 各ペインでgit worktreeに移動:"
-    echo -e "     ${CYAN}cd /path/to/your-worktree${NC}"
-    echo -e "     → ペイン名が自動的にworktree名に変わります"
+    echo -e "  ${GREEN}3.${NC} 手動起動:"
+    echo -e "     ${CYAN}zide${NC}  # Terminal IDE（Claude 3ペイン + チートシート）"
+    echo -e "     ${CYAN}zp4${NC}   # 4ペイン構成"
+    echo ""
+    echo -e "${MAGENTA}=== フローティングツール（zellij内） ===${NC}"
+    echo ""
+    echo -e "  ${YELLOW}Alt+y${NC}  yazi（ファイラー）"
+    echo -e "  ${YELLOW}Alt+g${NC}  lazygit（Git操作）"
+    echo -e "  ${YELLOW}Alt+t${NC}  汎用ターミナル"
+    echo -e "  ${YELLOW}Esc${NC}    閉じて戻る"
+    echo ""
+    echo -e "${MAGENTA}=== fzf検索コマンド ===${NC}"
+    echo ""
+    echo -e "  ${YELLOW}ff${NC}   ファイル検索（プレビュー付き）"
+    echo -e "  ${YELLOW}rgs${NC}  コンテンツ検索（ripgrep + fzf）"
+    echo -e "  ${YELLOW}rgi${NC}  インタラクティブ検索（入力しながら検索）"
+    echo -e "  ${YELLOW}fbr${NC}  Gitブランチ選択"
+    echo -e "  ${YELLOW}fwt${NC}  Git worktree選択"
+    echo -e "  ${YELLOW}fh${NC}   履歴検索"
     echo ""
     echo -e "${MAGENTA}=== zellijの基本操作 ===${NC}"
     echo ""
@@ -357,13 +493,7 @@ show_usage() {
     echo -e "  ${YELLOW}Ctrl+p → n${NC}        新規ペイン"
     echo -e "  ${YELLOW}Ctrl+p → x${NC}        ペイン閉じる"
     echo -e "  ${YELLOW}Ctrl+p → f${NC}        フルスクリーン"
-    echo -e "  ${YELLOW}Alt+h/j/k/l${NC}       ペイン間移動（ショートカット）"
-    echo ""
-    echo -e "${MAGENTA}=== git worktree + Claude Code ===${NC}"
-    echo ""
-    echo -e "  ${CYAN}git gtr new feature-xxx --ai${NC}  新規worktree作成"
-    echo -e "  ${CYAN}git gtr list${NC}                  worktree一覧"
-    echo -e "  ${CYAN}git gtr rm feature-xxx${NC}        worktree削除"
+    echo -e "  ${YELLOW}Ctrl+p → w${NC}        フローティング切り替え"
     echo ""
 }
 
@@ -373,13 +503,16 @@ uninstall() {
     echo -e "${YELLOW}=== UNINSTALL ===${NC}"
     echo ""
 
-    # Remove layout
-    local layout_dst="$ZELLIJ_LAYOUTS_DIR/parallel-claude.kdl"
-    if [[ -f "$layout_dst" ]]; then
-        print_step "Removing layout..."
-        rm "$layout_dst"
-        print_success "Layout removed"
-    fi
+    # Remove layouts
+    local layouts=("parallel-claude.kdl" "terminal-ide.kdl")
+    for layout_name in "${layouts[@]}"; do
+        local layout_dst="$ZELLIJ_LAYOUTS_DIR/$layout_name"
+        if [[ -f "$layout_dst" ]]; then
+            print_step "Removing $layout_name layout..."
+            rm "$layout_dst"
+            print_success "Layout removed: $layout_name"
+        fi
+    done
 
     # Remove zellij config integration
     local config_file="$ZELLIJ_CONFIG_DIR/config.kdl"
@@ -427,6 +560,9 @@ main() {
             exit 1
         fi
     fi
+
+    # Install terminal IDE tools
+    install_terminal_tools
 
     # Setup steps
     setup_zellij_layout
