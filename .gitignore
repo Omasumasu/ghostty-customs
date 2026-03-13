@@ -1,5 +1,5 @@
 # Rust
-/target/
+**/target/
 **/*.rs.bk
 Cargo.lock
 
@@ -12,3 +12,20 @@ Cargo.lock
 
 # macOS
 .DS_Store
+
+# Superpowers
+.superpowers/
+
+# Serena
+.serena/
+
+# Node
+node_modules/
+
+# SvelteKit build
+.svelte-kit/
+build/
+
+# Tauri generated
+**/gen/schemas/
+package-lock.json
