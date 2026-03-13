@@ -13,8 +13,10 @@
     "windows": [
       {
         "title": "Worktree Manager",
-        "width": 1024,
-        "height": 768
+        "width": 900,
+        "height": 600,
+        "minWidth": 700,
+        "minHeight": 400
       }
     ],
     "security": {

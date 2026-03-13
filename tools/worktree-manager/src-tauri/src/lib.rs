@@ -16,8 +16,14 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
         .manage(SessionManager::new())
         .setup(|app| {
+            // Setup tray icon
+            if let Err(e) = tray::setup_tray(app) {
+                eprintln!("Failed to setup tray: {e}");
+            }
+
             let app_handle = app.handle().clone();
 
             // Start hooks server and configure settings.json
@@ -30,6 +36,9 @@ pub fn run() {
                         if let Err(e) = hooks_config::update_settings(port) {
                             eprintln!("Failed to update Claude settings: {e}");
                         }
+
+                        // Track previous question count for notifications
+                        let mut prev_question_count: usize = 0;
 
                         // Forward hook events to session manager and emit to frontend
                         let mut rx = sender.subscribe();
@@ -44,6 +53,16 @@ pub fn run() {
                                         // Emit to frontend
                                         let _ = app_handle.emit("hook-event", &event);
                                         let _ = app_handle.emit("session-update", &session);
+
+                                        // Check if question count increased
+                                        let current_count = manager.question_count();
+                                        if current_count > prev_question_count {
+                                            tray::send_question_notification(
+                                                &app_handle,
+                                                current_count,
+                                            );
+                                        }
+                                        prev_question_count = current_count;
                                     }
                                 }
                                 Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
