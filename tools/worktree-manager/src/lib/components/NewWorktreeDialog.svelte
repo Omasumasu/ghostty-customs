@@ -33,7 +33,7 @@
       const safeBranch = branch.replace(/\//g, '-');
       const wtPath = `${repo}-${safeBranch}`;
 
-      const wt = await createWorktree(repo, branch, wtPath);
+      const wt = await createWorktree(repo, branch, wtPath, baseBranch);
 
       if (launchClaude) {
         await invoke('launch_claude', {

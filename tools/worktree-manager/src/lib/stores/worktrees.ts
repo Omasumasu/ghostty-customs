@@ -26,11 +26,13 @@ export async function createWorktree(
   repo: string,
   branch: string,
   worktreePath: string,
+  baseBranch: string = 'main',
 ): Promise<WorktreeInfo> {
   const result = await invoke<WorktreeInfo>('create_worktree', {
     repoPath: repo,
     branch,
     path: worktreePath,
+    baseBranch,
   });
   await loadWorktrees(repo);
   return result;

@@ -47,7 +47,7 @@ pub fn merge_hooks_config(existing: &Value, port: u16) -> Value {
                 .iter()
                 .filter(|entry| {
                     let url = entry.get("url").and_then(|v| v.as_str()).unwrap_or("");
-                    !url.contains("/hooks/")
+                    !(url.contains("127.0.0.1") && url.contains("/hooks/"))
                 })
                 .cloned()
                 .collect();

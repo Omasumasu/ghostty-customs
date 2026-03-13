@@ -33,7 +33,11 @@ export async function initSessionListener(): Promise<void> {
   // Load initial sessions
   try {
     const allSessions = await invoke<Record<string, SessionInfo>>('get_all_sessions');
-    sessions.set(new Map(Object.entries(allSessions)));
+    const sessionMap = new Map<string, SessionInfo>();
+    for (const session of Object.values(allSessions)) {
+      sessionMap.set(session.worktree_path, session);
+    }
+    sessions.set(sessionMap);
   } catch {
     // Session manager might not have data yet
   }

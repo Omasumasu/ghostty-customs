@@ -103,8 +103,19 @@ pub fn get_commits_ahead(worktree_path: &str, base_branch: &str) -> Result<usize
 
 /// Check if a branch has been merged into main/master
 pub fn check_is_merged(repo_path: &str, branch: &str) -> Result<bool, String> {
+    // Try main first, then master, then fall back to HEAD
+    let targets = ["main", "master", "HEAD"];
+    let merge_base = targets.iter().find(|&&target| {
+        // Check if target ref exists
+        let check = Command::new("git")
+            .args(["rev-parse", "--verify", target])
+            .current_dir(repo_path)
+            .output();
+        check.map(|o| o.status.success()).unwrap_or(false)
+    }).copied().unwrap_or("HEAD");
+
     let output = Command::new("git")
-        .args(["branch", "--merged", "HEAD", "--list", branch])
+        .args(["branch", "--merged", merge_base, "--list", branch])
         .current_dir(repo_path)
         .output()
         .map_err(|e| format!("Failed to run git branch --merged: {e}"))?;
@@ -136,9 +147,11 @@ pub async fn create_worktree(
     repo_path: String,
     branch: String,
     path: String,
+    base_branch: Option<String>,
 ) -> Result<WorktreeInfo, String> {
+    let base = base_branch.as_deref().unwrap_or("main");
     let output = Command::new("git")
-        .args(["worktree", "add", "-b", &branch, &path])
+        .args(["worktree", "add", "-b", &branch, &path, base])
         .current_dir(&repo_path)
         .output()
         .map_err(|e| format!("Failed to create worktree: {e}"))?;

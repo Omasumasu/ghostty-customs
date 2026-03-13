@@ -259,14 +259,14 @@ mod tests {
     fn test_hook_event_unknown() {
         let val = json!({"type": "something_new", "data": 42});
         let event = HookEvent::from_value(val);
-        matches!(event, HookEvent::Unknown { .. });
+        assert!(matches!(event, HookEvent::Unknown { .. }));
     }
 
     #[test]
     fn test_hook_event_non_object() {
         let val = json!("just a string");
         let event = HookEvent::from_value(val);
-        matches!(event, HookEvent::Unknown { .. });
+        assert!(matches!(event, HookEvent::Unknown { .. }));
     }
 
     #[test]
