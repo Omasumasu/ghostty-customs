@@ -1,6 +1,20 @@
 use crate::types::{GitStatus, WorktreeInfo};
 use std::process::Command;
 
+/// Find git binary, preferring known paths for GUI app context
+fn git_bin() -> &'static str {
+    static GIT: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    let g = GIT.get_or_init(|| {
+        for candidate in &["/usr/bin/git", "/opt/homebrew/bin/git", "/usr/local/bin/git"] {
+            if std::path::Path::new(candidate).exists() {
+                return candidate.to_string();
+            }
+        }
+        "git".to_string()
+    });
+    g.as_str()
+}
+
 /// Parse the output of `git worktree list --porcelain`
 pub fn parse_worktree_list(output: &str) -> Vec<WorktreeInfo> {
     let mut worktrees = Vec::new();
@@ -85,7 +99,7 @@ pub fn parse_git_status(output: &str) -> GitStatus {
 
 /// Get number of commits ahead of a reference branch
 pub fn get_commits_ahead(worktree_path: &str, base_branch: &str) -> Result<usize, String> {
-    let output = Command::new("git")
+    let output = Command::new(git_bin())
         .args(["rev-list", "--count", &format!("{base_branch}..HEAD")])
         .current_dir(worktree_path)
         .output()
@@ -107,14 +121,14 @@ pub fn check_is_merged(repo_path: &str, branch: &str) -> Result<bool, String> {
     let targets = ["main", "master", "HEAD"];
     let merge_base = targets.iter().find(|&&target| {
         // Check if target ref exists
-        let check = Command::new("git")
+        let check = Command::new(git_bin())
             .args(["rev-parse", "--verify", target])
             .current_dir(repo_path)
             .output();
         check.map(|o| o.status.success()).unwrap_or(false)
     }).copied().unwrap_or("HEAD");
 
-    let output = Command::new("git")
+    let output = Command::new(git_bin())
         .args(["branch", "--merged", merge_base, "--list", branch])
         .current_dir(repo_path)
         .output()
@@ -128,7 +142,7 @@ pub fn check_is_merged(repo_path: &str, branch: &str) -> Result<bool, String> {
 
 #[tauri::command]
 pub async fn list_worktrees(repo_path: String) -> Result<Vec<WorktreeInfo>, String> {
-    let output = Command::new("git")
+    let output = Command::new(git_bin())
         .args(["worktree", "list", "--porcelain"])
         .current_dir(&repo_path)
         .output()
@@ -150,7 +164,7 @@ pub async fn create_worktree(
     base_branch: Option<String>,
 ) -> Result<WorktreeInfo, String> {
     let base = base_branch.as_deref().unwrap_or("main");
-    let output = Command::new("git")
+    let output = Command::new(git_bin())
         .args(["worktree", "add", "-b", &branch, &path, base])
         .current_dir(&repo_path)
         .output()
@@ -158,7 +172,7 @@ pub async fn create_worktree(
 
     if !output.status.success() {
         // Try without -b (branch already exists)
-        let output2 = Command::new("git")
+        let output2 = Command::new(git_bin())
             .args(["worktree", "add", &path, &branch])
             .current_dir(&repo_path)
             .output()
@@ -170,7 +184,7 @@ pub async fn create_worktree(
     }
 
     // Get the HEAD commit of the new worktree
-    let head = Command::new("git")
+    let head = Command::new(git_bin())
         .args(["rev-parse", "HEAD"])
         .current_dir(&path)
         .output()
@@ -188,7 +202,7 @@ pub async fn create_worktree(
 
 #[tauri::command]
 pub async fn remove_worktree(repo_path: String, path: String) -> Result<(), String> {
-    let output = Command::new("git")
+    let output = Command::new(git_bin())
         .args(["worktree", "remove", &path])
         .current_dir(&repo_path)
         .output()
@@ -203,7 +217,7 @@ pub async fn remove_worktree(repo_path: String, path: String) -> Result<(), Stri
 
 #[tauri::command]
 pub async fn get_worktree_status(worktree_path: String) -> Result<GitStatus, String> {
-    let output = Command::new("git")
+    let output = Command::new(git_bin())
         .args(["status", "--short"])
         .current_dir(&worktree_path)
         .output()
@@ -223,8 +237,9 @@ pub async fn cleanup_merged(repo_path: String) -> Result<Vec<String>, String> {
     let worktrees = list_worktrees(repo_path.clone()).await?;
     let mut removed = Vec::new();
 
-    for wt in &worktrees {
-        if wt.is_bare || wt.branch == "main" || wt.branch == "master" {
+    for (i, wt) in worktrees.iter().enumerate() {
+        // Skip main worktree (first entry), bare repos, and main/master branches
+        if i == 0 || wt.is_bare || wt.branch == "main" || wt.branch == "master" {
             continue;
         }
         if check_is_merged(&repo_path, &wt.branch)? {

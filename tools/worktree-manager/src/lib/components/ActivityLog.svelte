@@ -7,12 +7,12 @@
 
   function typeBadge(actType: string): { label: string; classes: string } {
     switch (actType) {
-      case 'ToolUse': return { label: 'tool', classes: 'bg-tn-blue/20 text-tn-blue' };
-      case 'Message': return { label: 'msg', classes: 'bg-tn-green/20 text-tn-green' };
-      case 'Error': return { label: 'err', classes: 'bg-tn-red/20 text-tn-red' };
-      case 'Notification': return { label: 'note', classes: 'bg-tn-yellow/20 text-tn-yellow' };
-      case 'Start': return { label: 'start', classes: 'bg-tn-purple/20 text-tn-purple' };
-      case 'Stop': return { label: 'stop', classes: 'bg-tn-fg-muted/20 text-tn-fg-muted' };
+      case 'ToolUse': return { label: 'ツール', classes: 'bg-tn-blue/20 text-tn-blue' };
+      case 'Message': return { label: 'メッセージ', classes: 'bg-tn-green/20 text-tn-green' };
+      case 'Error': return { label: 'エラー', classes: 'bg-tn-red/20 text-tn-red' };
+      case 'Notification': return { label: '通知', classes: 'bg-tn-yellow/20 text-tn-yellow' };
+      case 'Start': return { label: '開始', classes: 'bg-tn-purple/20 text-tn-purple' };
+      case 'Stop': return { label: '停止', classes: 'bg-tn-fg-muted/20 text-tn-fg-muted' };
       default: return { label: actType, classes: 'bg-tn-bg-highlight text-tn-fg-muted' };
     }
   }
@@ -27,8 +27,8 @@
 
 <div class="flex flex-col">
   <div class="flex items-center justify-between mb-2">
-    <span class="text-xs text-tn-fg-muted uppercase tracking-wider">Activity</span>
-    <span class="text-[10px] text-tn-fg-muted">{entries.length} total</span>
+    <span class="text-xs text-tn-fg-muted uppercase tracking-wider">アクティビティ</span>
+    <span class="text-[10px] text-tn-fg-muted">{entries.length} 件</span>
   </div>
 
   <div class="space-y-1 max-h-[300px] overflow-y-auto">
@@ -46,7 +46,7 @@
         </span>
       </div>
     {:else}
-      <div class="text-xs text-tn-fg-muted py-2 text-center">No activity yet</div>
+      <div class="text-xs text-tn-fg-muted py-2 text-center">アクティビティなし</div>
     {/each}
   </div>
 </div>

@@ -2,25 +2,56 @@ use serde_json::{json, Value};
 use std::path::PathBuf;
 
 /// Generate the hooks configuration for Claude settings.json
+/// Uses the correct Claude Code hooks format: event name → [{ matcher, hooks: [{ type, command }] }]
 pub fn generate_hooks_config(port: u16) -> Value {
     let base_url = format!("http://127.0.0.1:{port}");
+
+    // Claude Code pipes hook data as JSON to stdin of command hooks
+    // We read stdin and POST it to our local server
+    let curl_cmd = |endpoint: &str| -> String {
+        format!(
+            "curl -s -X POST -H 'Content-Type: application/json' -d @- {base_url}/hooks/{endpoint}"
+        )
+    };
+
     json!({
         "hooks": {
-            "notification": [{
-                "type": "http",
-                "url": format!("{base_url}/hooks/notification"),
-                "transport": "sse"
-            }],
-            "tool": [{
-                "type": "http",
-                "url": format!("{base_url}/hooks/tool"),
-                "transport": "sse"
-            }],
-            "lifecycle": [{
-                "type": "http",
-                "url": format!("{base_url}/hooks/lifecycle"),
-                "transport": "sse"
-            }]
+            "Notification": [
+                {
+                    "matcher": "",
+                    "hooks": [{
+                        "type": "command",
+                        "command": curl_cmd("notification")
+                    }]
+                }
+            ],
+            "PreToolUse": [
+                {
+                    "matcher": "",
+                    "hooks": [{
+                        "type": "command",
+                        "command": curl_cmd("tool")
+                    }]
+                }
+            ],
+            "PostToolUse": [
+                {
+                    "matcher": "",
+                    "hooks": [{
+                        "type": "command",
+                        "command": curl_cmd("tool")
+                    }]
+                }
+            ],
+            "Stop": [
+                {
+                    "matcher": "",
+                    "hooks": [{
+                        "type": "command",
+                        "command": curl_cmd("lifecycle")
+                    }]
+                }
+            ]
         }
     })
 }
@@ -37,17 +68,45 @@ pub fn merge_hooks_config(existing: &Value, port: u16) -> Value {
         result["hooks"] = json!({});
     }
 
-    for (key, new_entries) in new_hooks {
-        let new_arr = new_entries.as_array().unwrap();
-
-        if let Some(existing_arr) = result["hooks"].get(key).and_then(|v| v.as_array()) {
-            // Keep user's entries that don't look like our worktree-manager hooks
-            // (identified by having a /hooks/ path on localhost)
-            let mut clean: Vec<Value> = existing_arr
+    // Remove old-style http hooks (from previous version of this app)
+    for old_key in &["notification", "tool", "lifecycle"] {
+        if let Some(arr) = result["hooks"].get(*old_key).and_then(|v| v.as_array()) {
+            let clean: Vec<Value> = arr
                 .iter()
                 .filter(|entry| {
                     let url = entry.get("url").and_then(|v| v.as_str()).unwrap_or("");
                     !(url.contains("127.0.0.1") && url.contains("/hooks/"))
+                })
+                .cloned()
+                .collect();
+            if clean.is_empty() {
+                if let Some(obj) = result["hooks"].as_object_mut() {
+                    obj.remove(*old_key);
+                }
+            } else {
+                result["hooks"][*old_key] = Value::Array(clean);
+            }
+        }
+    }
+
+    // Merge new hooks (correct format with matcher + hooks array)
+    for (key, new_entries) in new_hooks {
+        let new_arr = new_entries.as_array().unwrap();
+
+        if let Some(existing_arr) = result["hooks"].get(key).and_then(|v| v.as_array()) {
+            // Keep user's entries that don't contain our curl commands
+            let mut clean: Vec<Value> = existing_arr
+                .iter()
+                .filter(|entry| {
+                    let hooks_arr = entry.get("hooks").and_then(|v| v.as_array());
+                    if let Some(hooks) = hooks_arr {
+                        !hooks.iter().any(|h| {
+                            let cmd = h.get("command").and_then(|v| v.as_str()).unwrap_or("");
+                            cmd.contains("127.0.0.1") && cmd.contains("/hooks/")
+                        })
+                    } else {
+                        true
+                    }
                 })
                 .cloned()
                 .collect();
@@ -76,7 +135,6 @@ fn dirs_next_home() -> String {
 pub fn update_settings(port: u16) -> Result<(), String> {
     let settings_path = get_settings_path();
 
-    // Read existing settings or start fresh
     let existing: Value = if settings_path.exists() {
         let content =
             std::fs::read_to_string(&settings_path).map_err(|e| format!("Failed to read settings: {e}"))?;
@@ -87,7 +145,6 @@ pub fn update_settings(port: u16) -> Result<(), String> {
 
     let merged = merge_hooks_config(&existing, port);
 
-    // Ensure directory exists
     if let Some(parent) = settings_path.parent() {
         std::fs::create_dir_all(parent).map_err(|e| format!("Failed to create dir: {e}"))?;
     }
@@ -107,12 +164,13 @@ mod tests {
     fn test_generate_hooks_config() {
         let config = generate_hooks_config(8080);
         let hooks = config.get("hooks").unwrap();
-        let notification = hooks.get("notification").unwrap().as_array().unwrap();
+        let notification = hooks.get("Notification").unwrap().as_array().unwrap();
         assert_eq!(notification.len(), 1);
-        assert_eq!(
-            notification[0].get("url").unwrap().as_str().unwrap(),
-            "http://127.0.0.1:8080/hooks/notification"
-        );
+        let inner = notification[0]["hooks"].as_array().unwrap();
+        assert_eq!(inner[0]["type"].as_str().unwrap(), "command");
+        let cmd = inner[0]["command"].as_str().unwrap();
+        assert!(cmd.contains("127.0.0.1:8080"));
+        assert!(cmd.contains("/hooks/notification"));
     }
 
     #[test]
@@ -120,9 +178,10 @@ mod tests {
         let existing = json!({});
         let merged = merge_hooks_config(&existing, 9090);
         let hooks = merged.get("hooks").unwrap();
-        assert!(hooks.get("notification").is_some());
-        assert!(hooks.get("tool").is_some());
-        assert!(hooks.get("lifecycle").is_some());
+        assert!(hooks.get("Notification").is_some());
+        assert!(hooks.get("PreToolUse").is_some());
+        assert!(hooks.get("PostToolUse").is_some());
+        assert!(hooks.get("Stop").is_some());
     }
 
     #[test]
@@ -141,45 +200,64 @@ mod tests {
     fn test_merge_hooks_config_preserves_user_hooks() {
         let existing = json!({
             "hooks": {
-                "notification": [{
-                    "type": "command",
-                    "command": "notify-send"
+                "Notification": [{
+                    "matcher": "idle_prompt",
+                    "hooks": [{
+                        "type": "command",
+                        "command": "terminal-notifier -title 'Claude' -message 'Question'"
+                    }]
                 }]
             }
         });
         let merged = merge_hooks_config(&existing, 9090);
-        let notifications = merged["hooks"]["notification"].as_array().unwrap();
-        // Should have user's entry + our entry
+        let notifications = merged["hooks"]["Notification"].as_array().unwrap();
         assert_eq!(notifications.len(), 2);
-        assert_eq!(
-            notifications[0]["type"].as_str().unwrap(),
-            "command"
-        );
-        assert_eq!(
-            notifications[1]["url"].as_str().unwrap(),
-            "http://127.0.0.1:9090/hooks/notification"
-        );
+        assert_eq!(notifications[0]["matcher"].as_str().unwrap(), "idle_prompt");
     }
 
     #[test]
     fn test_merge_hooks_config_deduplicates_on_restart() {
-        // Simulate: first run set port 8080, second run sets port 9090
+        let existing = json!({
+            "hooks": {
+                "Notification": [{
+                    "matcher": "",
+                    "hooks": [{
+                        "type": "command",
+                        "command": "curl -s -X POST -H 'Content-Type: application/json' -d @- http://127.0.0.1:8080/hooks/notification"
+                    }]
+                }]
+            }
+        });
+        let merged = merge_hooks_config(&existing, 9090);
+        let notifications = merged["hooks"]["Notification"].as_array().unwrap();
+        assert_eq!(notifications.len(), 1);
+        let cmd = notifications[0]["hooks"][0]["command"].as_str().unwrap();
+        assert!(cmd.contains("9090"));
+    }
+
+    #[test]
+    fn test_merge_removes_old_style_http_hooks() {
         let existing = json!({
             "hooks": {
                 "notification": [{
                     "type": "http",
                     "url": "http://127.0.0.1:8080/hooks/notification",
                     "transport": "sse"
+                }],
+                "Notification": [{
+                    "matcher": "idle_prompt",
+                    "hooks": [{
+                        "type": "command",
+                        "command": "terminal-notifier -title 'Claude' -message 'Question'"
+                    }]
                 }]
             }
         });
         let merged = merge_hooks_config(&existing, 9090);
-        let notifications = merged["hooks"]["notification"].as_array().unwrap();
-        // Old entry should be replaced, not duplicated
-        assert_eq!(notifications.len(), 1);
-        assert_eq!(
-            notifications[0]["url"].as_str().unwrap(),
-            "http://127.0.0.1:9090/hooks/notification"
-        );
+        // Old-style "notification" (lowercase) should be removed
+        assert!(merged["hooks"].get("notification").is_none());
+        // User's Notification hook + our new one
+        let notifications = merged["hooks"]["Notification"].as_array().unwrap();
+        assert_eq!(notifications.len(), 2);
     }
 }

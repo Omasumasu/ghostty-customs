@@ -20,7 +20,7 @@
 
   async function handleCreate() {
     if (!branch.trim()) {
-      errorMsg = 'Branch name is required';
+      errorMsg = 'ブランチ名を入力してください';
       return;
     }
 
@@ -70,7 +70,7 @@
   >
     <div class="bg-tn-bg-dark border border-tn-border rounded-lg w-[420px] shadow-xl">
       <div class="flex items-center justify-between px-4 py-3 border-b border-tn-border">
-        <h3 class="text-sm font-medium text-tn-fg">New Worktree</h3>
+        <h3 class="text-sm font-medium text-tn-fg">新規 Worktree</h3>
         <button
           onclick={onclose}
           class="text-tn-fg-muted hover:text-tn-fg text-lg leading-none"
@@ -79,7 +79,7 @@
 
       <div class="p-4 space-y-3">
         <div>
-          <label class="block text-xs text-tn-fg-muted mb-1" for="branch-name">Branch name</label>
+          <label class="block text-xs text-tn-fg-muted mb-1" for="branch-name">ブランチ名</label>
           <input
             id="branch-name"
             type="text"
@@ -90,7 +90,7 @@
         </div>
 
         <div>
-          <label class="block text-xs text-tn-fg-muted mb-1" for="base-branch">Base branch</label>
+          <label class="block text-xs text-tn-fg-muted mb-1" for="base-branch">ベースブランチ</label>
           <input
             id="base-branch"
             type="text"
@@ -106,16 +106,16 @@
             bind:checked={launchClaude}
             class="accent-tn-blue"
           />
-          <span class="text-xs text-tn-fg-dim">Launch Claude Code</span>
+          <span class="text-xs text-tn-fg-dim">Claude Code を起動する</span>
         </label>
 
         {#if launchClaude}
           <div>
-            <label class="block text-xs text-tn-fg-muted mb-1" for="initial-prompt">Initial prompt (optional)</label>
+            <label class="block text-xs text-tn-fg-muted mb-1" for="initial-prompt">初期プロンプト（任意）</label>
             <textarea
               id="initial-prompt"
               bind:value={initialPrompt}
-              placeholder="Implement feature X..."
+              placeholder="機能Xを実装して..."
               rows="3"
               class="w-full px-3 py-1.5 text-sm bg-tn-bg border border-tn-border rounded text-tn-fg placeholder-tn-fg-muted focus:outline-none focus:border-tn-blue resize-none"
             ></textarea>
@@ -132,14 +132,14 @@
           onclick={onclose}
           class="px-3 py-1.5 text-xs text-tn-fg-muted hover:text-tn-fg bg-tn-bg-alt border border-tn-border rounded transition-colors"
         >
-          Cancel
+          キャンセル
         </button>
         <button
           onclick={handleCreate}
           disabled={creating}
           class="px-3 py-1.5 text-xs text-tn-bg bg-tn-blue rounded hover:opacity-90 transition-opacity disabled:opacity-50"
         >
-          {creating ? 'Creating...' : 'Create'}
+          {creating ? '作成中...' : '作成'}
         </button>
       </div>
     </div>

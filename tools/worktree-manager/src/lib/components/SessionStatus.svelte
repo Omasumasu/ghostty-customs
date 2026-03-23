@@ -20,9 +20,9 @@
       }
       const nowSecs = Math.floor(Date.now() / 1000);
       const diff = nowSecs - lastSecs;
-      if (diff < 60) elapsed = `${diff}s ago`;
-      else if (diff < 3600) elapsed = `${Math.floor(diff / 60)}m ago`;
-      else elapsed = `${Math.floor(diff / 3600)}h ago`;
+      if (diff < 60) elapsed = `${diff}秒前`;
+      else if (diff < 3600) elapsed = `${Math.floor(diff / 60)}分前`;
+      else elapsed = `${Math.floor(diff / 3600)}時間前`;
     }
 
     updateElapsed();
@@ -32,10 +32,10 @@
 
   function stateLabel(state: string): string {
     switch (state) {
-      case 'Working': return 'Working';
-      case 'Question': return 'Needs Input';
-      case 'Idle': return 'Idle';
-      case 'Merged': return 'Merged';
+      case 'Working': return '作業中';
+      case 'Question': return '入力待ち';
+      case 'Idle': return '待機中';
+      case 'Merged': return 'マージ済み';
       default: return state;
     }
   }
@@ -61,7 +61,7 @@
 
 <div class="rounded border {session ? stateBgClass(session.state) : 'bg-tn-bg-alt border-tn-border'} p-3">
   <div class="flex items-center justify-between mb-1">
-    <span class="text-xs text-tn-fg-muted uppercase tracking-wider">Claude Session</span>
+    <span class="text-xs text-tn-fg-muted uppercase tracking-wider">Claude セッション</span>
     {#if elapsed}
       <span class="text-[10px] text-tn-fg-muted">{elapsed}</span>
     {/if}
@@ -79,6 +79,6 @@
       </p>
     {/if}
   {:else}
-    <span class="text-sm text-tn-fg-muted">No active session</span>
+    <span class="text-sm text-tn-fg-muted">アクティブなセッションなし</span>
   {/if}
 </div>

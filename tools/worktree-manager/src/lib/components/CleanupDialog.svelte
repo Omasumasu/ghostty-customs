@@ -58,7 +58,7 @@
   >
     <div class="bg-tn-bg-dark border border-tn-border rounded-lg w-[400px] shadow-xl">
       <div class="flex items-center justify-between px-4 py-3 border-b border-tn-border">
-        <h3 class="text-sm font-medium text-tn-fg">Cleanup Merged Worktrees</h3>
+        <h3 class="text-sm font-medium text-tn-fg">マージ済み Worktree の整理</h3>
         <button
           onclick={handleClose}
           class="text-tn-fg-muted hover:text-tn-fg text-lg leading-none"
@@ -68,11 +68,11 @@
       <div class="p-4 space-y-3">
         {#if !done}
           <p class="text-xs text-tn-fg-dim leading-relaxed">
-            This will find and remove all worktrees whose branches have been merged into the main branch.
+            メインブランチにマージ済みの Worktree を検出して削除します。
           </p>
         {:else}
           {#if removed.length > 0}
-            <p class="text-xs text-tn-green mb-2">Removed {removed.length} merged worktree{removed.length > 1 ? 's' : ''}:</p>
+            <p class="text-xs text-tn-green mb-2">{removed.length} 件のマージ済み Worktree を削除しました:</p>
             <div class="space-y-1">
               {#each removed as branch}
                 <div class="text-xs text-tn-fg-dim px-2 py-1 bg-tn-bg rounded">
@@ -81,7 +81,7 @@
               {/each}
             </div>
           {:else}
-            <p class="text-xs text-tn-fg-muted">No merged worktrees found.</p>
+            <p class="text-xs text-tn-fg-muted">マージ済みの Worktree はありません。</p>
           {/if}
         {/if}
 
@@ -95,7 +95,7 @@
           onclick={handleClose}
           class="px-3 py-1.5 text-xs text-tn-fg-muted hover:text-tn-fg bg-tn-bg-alt border border-tn-border rounded transition-colors"
         >
-          {done ? 'Close' : 'Cancel'}
+          {done ? '閉じる' : 'キャンセル'}
         </button>
         {#if !done}
           <button
@@ -103,7 +103,7 @@
             disabled={cleaning}
             class="px-3 py-1.5 text-xs text-tn-bg bg-tn-yellow rounded hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {cleaning ? 'Cleaning...' : 'Cleanup'}
+            {cleaning ? '整理中...' : '整理する'}
           </button>
         {/if}
       </div>

@@ -1,4 +1,5 @@
 pub mod claude;
+pub mod config;
 pub mod external;
 pub mod hooks_config;
 pub mod hooks_server;
@@ -96,6 +97,9 @@ pub fn run() {
             external::open_in_ide,
             external::open_difftool,
             external::open_terminal,
+            config::list_repositories,
+            config::add_repository,
+            config::remove_repository,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

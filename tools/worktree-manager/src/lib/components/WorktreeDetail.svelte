@@ -86,21 +86,21 @@
         <button
           onclick={openDifftool}
           class="px-2.5 py-1 text-xs text-tn-fg-dim bg-tn-bg-alt border border-tn-border rounded hover:bg-tn-bg-highlight hover:text-tn-blue transition-colors"
-          title="Open difftool"
+          title="差分ツールを開く"
         >
           Diff
         </button>
         <button
           onclick={openIDE}
           class="px-2.5 py-1 text-xs text-tn-fg-dim bg-tn-bg-alt border border-tn-border rounded hover:bg-tn-bg-highlight hover:text-tn-green transition-colors"
-          title="Open in IDE"
+          title="IDE で開く"
         >
           IDE
         </button>
         <button
           onclick={openTerminal}
           class="px-2.5 py-1 text-xs text-tn-fg-dim bg-tn-bg-alt border border-tn-border rounded hover:bg-tn-bg-highlight hover:text-tn-purple transition-colors"
-          title="Open Ghostty terminal"
+          title="Ghostty ターミナルを開く"
         >
           Terminal
         </button>
@@ -112,13 +112,13 @@
 
     <!-- Git Info -->
     <div class="rounded border border-tn-border bg-tn-bg-alt p-3">
-      <span class="text-xs text-tn-fg-muted uppercase tracking-wider block mb-2">Git Info</span>
+      <span class="text-xs text-tn-fg-muted uppercase tracking-wider block mb-2">Git 情報</span>
       <div class="grid grid-cols-2 gap-y-1.5 text-xs">
-        <span class="text-tn-fg-muted">Branch</span>
+        <span class="text-tn-fg-muted">ブランチ</span>
         <span class="text-tn-fg-dim">{worktree.branch}</span>
-        <span class="text-tn-fg-muted">Commit</span>
+        <span class="text-tn-fg-muted">コミット</span>
         <span class="text-tn-fg-dim font-mono">{worktree.commit.slice(0, 8)}</span>
-        <span class="text-tn-fg-muted">Files changed</span>
+        <span class="text-tn-fg-muted">変更ファイル数</span>
         <span class="text-tn-fg-dim">
           {#if loadingStatus}
             ...
@@ -131,16 +131,16 @@
       {#if gitStatus && !loadingStatus}
         <div class="mt-2 flex gap-3 text-[10px]">
           {#if gitStatus.modified.length > 0}
-            <span class="text-tn-yellow">{gitStatus.modified.length} modified</span>
+            <span class="text-tn-yellow">{gitStatus.modified.length} 変更</span>
           {/if}
           {#if gitStatus.added.length > 0}
-            <span class="text-tn-green">{gitStatus.added.length} added</span>
+            <span class="text-tn-green">{gitStatus.added.length} 追加</span>
           {/if}
           {#if gitStatus.deleted.length > 0}
-            <span class="text-tn-red">{gitStatus.deleted.length} deleted</span>
+            <span class="text-tn-red">{gitStatus.deleted.length} 削除</span>
           {/if}
           {#if gitStatus.untracked.length > 0}
-            <span class="text-tn-fg-muted">{gitStatus.untracked.length} untracked</span>
+            <span class="text-tn-fg-muted">{gitStatus.untracked.length} 未追跡</span>
           {/if}
         </div>
       {/if}
@@ -154,7 +154,7 @@
 {:else}
   <div class="flex-1 h-full flex items-center justify-center">
     <div class="text-center">
-      <p class="text-tn-fg-muted text-sm">Select a worktree to view details</p>
+      <p class="text-tn-fg-muted text-sm">Worktree を選択して詳細を表示</p>
     </div>
   </div>
 {/if}
