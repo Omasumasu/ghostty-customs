@@ -52,31 +52,51 @@ impl SessionManager {
             } => {
                 let sid = session_id.as_deref()?;
                 let mut sessions = self.sessions.lock().unwrap();
-                if let Some(session) = sessions.get_mut(sid) {
-                    // Check if it's a question (contains "?" or is asking for input)
-                    if message.contains('?')
-                        || message.to_lowercase().contains("would you like")
-                        || message.to_lowercase().contains("please")
-                    {
-                        session.state = SessionState::Question;
-                        session.question_text = Some(message.clone());
+                let session = sessions.entry(sid.to_string()).or_insert_with(|| {
+                    SessionInfo {
+                        worktree_path: String::new(),
+                        branch: String::new(),
+                        state: SessionState::Working,
+                        last_activity: chrono_now(),
+                        question_text: None,
                     }
-                    session.last_activity = chrono_now();
-                    Some(session.clone())
-                } else {
-                    None
+                });
+                // Check if it's a question (contains "?" or is asking for input)
+                if message.contains('?')
+                    || message.to_lowercase().contains("would you like")
+                    || message.to_lowercase().contains("please")
+                {
+                    session.state = SessionState::Question;
+                    session.question_text = Some(message.clone());
                 }
+                session.last_activity = chrono_now();
+                Some(session.clone())
             }
-            HookEvent::ToolUse { session_id, .. } | HookEvent::ToolResult { session_id, .. } => {
+            HookEvent::ToolUse { session_id, cwd, .. } | HookEvent::ToolResult { session_id, cwd, .. } => {
                 let sid = session_id.as_deref()?;
                 let mut sessions = self.sessions.lock().unwrap();
                 if let Some(session) = sessions.get_mut(sid) {
                     session.state = SessionState::Working;
                     session.last_activity = chrono_now();
                     session.question_text = None;
+                    // Update cwd if it was initially empty
+                    if session.worktree_path.is_empty() {
+                        if let Some(ref cwd_val) = cwd {
+                            session.worktree_path = cwd_val.clone();
+                        }
+                    }
                     Some(session.clone())
                 } else {
-                    None
+                    // Auto-register session on first tool use (Claude Code has no explicit "start")
+                    let info = SessionInfo {
+                        worktree_path: cwd.clone().unwrap_or_default(),
+                        branch: String::new(),
+                        state: SessionState::Working,
+                        last_activity: chrono_now(),
+                        question_text: None,
+                    };
+                    sessions.insert(sid.to_string(), info.clone());
+                    Some(info)
                 }
             }
             HookEvent::Unknown { .. } => None,

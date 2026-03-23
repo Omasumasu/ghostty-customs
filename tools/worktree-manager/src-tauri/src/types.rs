@@ -79,11 +79,13 @@ pub enum HookEvent {
         tool_name: String,
         input: Option<serde_json::Value>,
         session_id: Option<String>,
+        cwd: Option<String>,
     },
     ToolResult {
         tool_name: String,
         output: Option<String>,
         session_id: Option<String>,
+        cwd: Option<String>,
     },
     Start {
         session_id: Option<String>,
@@ -99,54 +101,70 @@ pub enum HookEvent {
 
 impl HookEvent {
     /// Parse a HookEvent from a serde_json::Value.
-    /// Claude hooks payload has different structures for same "type" field,
-    /// so we use manual deserialization instead of serde tag.
+    /// Claude Code hooks send: hook_event_name, session_id, cwd, tool_name, etc.
+    /// Real payload example:
+    /// {
+    ///   "hook_event_name": "PostToolUse",
+    ///   "session_id": "...",
+    ///   "cwd": "/path/to/project",
+    ///   "tool_name": "Bash",
+    ///   "tool_input": {...},
+    ///   "tool_response": {...}
+    /// }
     pub fn from_value(value: serde_json::Value) -> Self {
         let obj = match value.as_object() {
             Some(o) => o,
             None => return HookEvent::Unknown { raw: value },
         };
 
-        let event_type = obj
-            .get("type")
+        let session_id = obj
+            .get("session_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+        let cwd = obj
+            .get("cwd")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+
+        // Claude Code uses "hook_event_name" field, fallback to "type" for manual/test payloads
+        let event_name = obj
+            .get("hook_event_name")
+            .or_else(|| obj.get("type"))
             .and_then(|v| v.as_str())
             .unwrap_or("");
 
-        match event_type {
-            "notification" => {
+        match event_name {
+            // Notification hooks (idle_prompt, permission_prompt, etc.)
+            "Notification" | "notification" => {
+                // Claude Code Notification hook doesn't have a "message" field directly.
+                // The notification content varies. We use tool_name or a summary.
                 let message = obj
                     .get("message")
                     .and_then(|v| v.as_str())
-                    .unwrap_or("")
+                    .unwrap_or("通知")
                     .to_string();
-                let session_id = obj
-                    .get("session_id")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string());
                 HookEvent::Notification {
                     message,
                     session_id,
                 }
             }
-            "tool_use" => {
+            // Tool use hooks
+            "PreToolUse" | "tool_use" => {
                 let tool_name = obj
                     .get("tool_name")
                     .or_else(|| obj.get("name"))
                     .and_then(|v| v.as_str())
                     .unwrap_or("")
                     .to_string();
-                let input = obj.get("input").cloned();
-                let session_id = obj
-                    .get("session_id")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string());
+                let input = obj.get("tool_input").or_else(|| obj.get("input")).cloned();
                 HookEvent::ToolUse {
                     tool_name,
                     input,
                     session_id,
+                    cwd,
                 }
             }
-            "tool_result" => {
+            "PostToolUse" | "tool_result" => {
                 let tool_name = obj
                     .get("tool_name")
                     .or_else(|| obj.get("name"))
@@ -154,38 +172,31 @@ impl HookEvent {
                     .unwrap_or("")
                     .to_string();
                 let output = obj
-                    .get("output")
+                    .get("tool_response")
+                    .and_then(|v| v.get("stdout"))
                     .and_then(|v| v.as_str())
-                    .map(|s| s.to_string());
-                let session_id = obj
-                    .get("session_id")
-                    .and_then(|v| v.as_str())
+                    .or_else(|| obj.get("output").and_then(|v| v.as_str()))
                     .map(|s| s.to_string());
                 HookEvent::ToolResult {
                     tool_name,
                     output,
                     session_id,
+                    cwd,
                 }
             }
-            "start" => {
-                let session_id = obj
-                    .get("session_id")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string());
-                let cwd = obj
-                    .get("cwd")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string());
-                HookEvent::Start { session_id, cwd }
+            // Lifecycle hooks
+            "Stop" | "stop" => HookEvent::Stop { session_id },
+            "start" => HookEvent::Start { session_id, cwd },
+            _ => {
+                // Any unknown event with session_id + cwd = treat as "session is active"
+                // This ensures we at least register the session
+                if session_id.is_some() && cwd.is_some() {
+                    // First time seeing this session? Treat as start
+                    HookEvent::Start { session_id, cwd }
+                } else {
+                    HookEvent::Unknown { raw: value.clone() }
+                }
             }
-            "stop" => {
-                let session_id = obj
-                    .get("session_id")
-                    .and_then(|v| v.as_str())
-                    .map(|s| s.to_string());
-                HookEvent::Stop { session_id }
-            }
-            _ => HookEvent::Unknown { raw: value.clone() },
         }
     }
 }
