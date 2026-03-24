@@ -237,6 +237,7 @@ mod tests {
                 tool_name,
                 input,
                 session_id,
+                ..
             } => {
                 assert_eq!(tool_name, "Read");
                 assert!(input.is_some());

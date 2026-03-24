@@ -255,6 +255,7 @@ mod tests {
             tool_name: "Read".to_string(),
             input: None,
             session_id: Some("s1".to_string()),
+            cwd: None,
         });
 
         assert_eq!(result.unwrap().state, SessionState::Working);
